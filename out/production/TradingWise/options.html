@@ -1,0 +1,687 @@
+<title>Options Cost Recovery Calculator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+    :root {
+      --paper: #eef0ea;
+      --surface: #fbfbf7;
+      --surface-sunken: #e6e8e0;
+      --ink: #1b2420;
+      --ink-soft: #57625b;
+      --ink-faint: #8b9590;
+      --accent: #a06a1f;
+      --accent-soft: #d9a35c;
+      --positive: #2f6b4e;
+      --positive-soft: #bfe0cf;
+      --border: rgba(27, 36, 32, 0.14);
+      --border-strong: rgba(27, 36, 32, 0.28);
+      --shadow: rgba(27, 36, 32, 0.08);
+      --danger: #a3402f;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --paper: #12160f;
+        --surface: #191f17;
+        --surface-sunken: #10140d;
+        --ink: #edeee4;
+        --ink-soft: #aab3a4;
+        --ink-faint: #767f76;
+        --accent: #e3ad5f;
+        --accent-soft: #8a5f28;
+        --positive: #79c79b;
+        --positive-soft: #21402f;
+        --border: rgba(237, 238, 228, 0.14);
+        --border-strong: rgba(237, 238, 228, 0.26);
+        --shadow: rgba(0, 0, 0, 0.35);
+        --danger: #e08469;
+      }
+    }
+
+    :root[data-theme="dark"] {
+      --paper: #12160f;
+      --surface: #191f17;
+      --surface-sunken: #10140d;
+      --ink: #edeee4;
+      --ink-soft: #aab3a4;
+      --ink-faint: #767f76;
+      --accent: #e3ad5f;
+      --accent-soft: #8a5f28;
+      --positive: #79c79b;
+      --positive-soft: #21402f;
+      --border: rgba(237, 238, 228, 0.14);
+      --border-strong: rgba(237, 238, 228, 0.26);
+      --shadow: rgba(0, 0, 0, 0.35);
+      --danger: #e08469;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--paper);
+      color: var(--ink);
+    }
+
+    body {
+      font-family: Georgia, "Times New Roman", serif;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      background-image: linear-gradient(var(--border) 1px, transparent 1px);
+      background-size: 100% 2.4rem;
+      background-position: 0 5.4rem;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .bar-fill, .value { transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.3s ease; }
+    }
+
+    .wrap {
+      max-width: 62rem;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 5rem;
+    }
+
+    header.top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.1rem;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      font-weight: 600;
+      font-size: 0.78rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .brand span { color: var(--ink-faint); }
+
+    h1 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 600;
+      font-optical-sizing: auto;
+      font-size: clamp(1.9rem, 1.4rem + 2vw, 2.9rem);
+      line-height: 1.08;
+      letter-spacing: -0.01em;
+      margin: 0.5rem 0 0;
+      text-wrap: balance;
+    }
+
+    .lede {
+      font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+      font-size: 1rem;
+      line-height: 1.6;
+      color: var(--ink-soft);
+      max-width: 40rem;
+      margin: 0.9rem 0 0;
+    }
+
+    nav.tabs {
+      display: flex;
+      gap: 0.4rem;
+      margin: 1.6rem 0 2.75rem;
+    }
+
+    nav.tabs a {
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: 0.76rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: var(--ink-soft);
+      padding: 0.45rem 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      background: var(--surface);
+    }
+
+    nav.tabs a.active {
+      color: var(--paper);
+      background: var(--ink);
+      border-color: var(--ink);
+    }
+
+    main.grid {
+      display: grid;
+      grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+      gap: 1.75rem;
+      align-items: start;
+    }
+
+    @media (max-width: 46rem) {
+      main.grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      box-shadow: 0 1px 2px var(--shadow);
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.1rem 1.35rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-head h2 {
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin: 0;
+    }
+
+    .card-head .idx {
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: 0.72rem;
+      color: var(--ink-faint);
+    }
+
+    form {
+      padding: 1.35rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.35rem;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .field label {
+      font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+      font-size: 0.83rem;
+      font-weight: 600;
+      color: var(--ink-soft);
+    }
+
+    .field .hint {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.76rem;
+      color: var(--ink-faint);
+    }
+
+    .input-row {
+      position: relative;
+      display: flex;
+      align-items: center;
+      border-bottom: 1.5px solid var(--border-strong);
+      padding-bottom: 0.4rem;
+    }
+
+    .input-row .prefix, .input-row .suffix {
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      color: var(--ink-faint);
+      font-size: 1.05rem;
+    }
+
+    .input-row .prefix { margin-right: 0.4rem; }
+    .input-row .suffix { margin-left: 0.4rem; }
+
+    input[type="number"] {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--ink);
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: 1.2rem;
+      font-variant-numeric: tabular-nums;
+      padding: 0.15rem 0;
+    }
+
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      opacity: 0.5;
+    }
+
+    .input-row:focus-within { border-bottom-color: var(--accent); }
+    input:focus-visible { outline: none; }
+    .input-row:focus-within .prefix,
+    .input-row:focus-within .suffix { color: var(--accent); }
+
+    .results {
+      padding: 1.35rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .hero {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.75rem;
+      align-items: baseline;
+    }
+
+    .hero-item .k {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.76rem;
+      color: var(--ink-faint);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.3rem;
+    }
+
+    .hero-item .v {
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 600;
+      font-size: clamp(1.7rem, 1.3rem + 1.4vw, 2.35rem);
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    .hero-item.accent .v { color: var(--accent); }
+    .hero-item.positive .v { color: var(--positive); }
+
+    .bar-block {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .bar-labels {
+      display: flex;
+      justify-content: space-between;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.78rem;
+      color: var(--ink-soft);
+    }
+
+    .bar-labels strong {
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bar {
+      position: relative;
+      height: 2.1rem;
+      background: var(--surface-sunken);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      display: flex;
+    }
+
+    .bar-fill {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .bar-fill.sold {
+      background: var(--accent-soft);
+      color: var(--ink);
+      justify-content: flex-end;
+      padding-right: 0.6rem;
+    }
+
+    .bar-fill.free {
+      background: var(--positive-soft);
+      color: var(--ink);
+      justify-content: flex-start;
+      padding-left: 0.6rem;
+    }
+
+    .bar-caption {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.78rem;
+      color: var(--ink-soft);
+      line-height: 1.5;
+    }
+
+    .ledger {
+      border-top: 1px solid var(--border);
+      padding-top: 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .ledger-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.88rem;
+    }
+
+    .ledger-row .label { color: var(--ink-soft); }
+
+    .ledger-row .value {
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+    .ledger-row.total {
+      border-top: 1px dashed var(--border-strong);
+      padding-top: 0.65rem;
+      margin-top: 0.15rem;
+    }
+
+    .ledger-row.total .value {
+      color: var(--positive);
+      font-size: 0.98rem;
+    }
+
+    .warn {
+      display: none;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.85rem;
+      color: var(--danger);
+      background: color-mix(in srgb, var(--danger) 12%, transparent);
+      border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+      border-radius: 3px;
+      padding: 0.65rem 0.85rem;
+      line-height: 1.5;
+    }
+
+    .warn.show { display: block; }
+    .results.hidden { display: none; }
+
+    footer.about {
+      margin-top: 2.5rem;
+      padding-top: 1.75rem;
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1.75rem;
+    }
+
+    @media (max-width: 46rem) {
+      footer.about { grid-template-columns: 1fr; }
+    }
+
+    footer.about .col h3 {
+      font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      margin: 0 0 0.6rem;
+    }
+
+    footer.about .col p {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 0.86rem;
+      line-height: 1.6;
+      color: var(--ink-soft);
+      margin: 0;
+    }
+
+    a { color: var(--accent); }
+</style>
+
+<div class="wrap">
+    <header class="top">
+        <div>
+            <div class="brand">TradingWise <span>/ Strategy Tools</span></div>
+            <h1>Options&nbsp;Cost Recovery</h1>
+            <p class="lede">Same idea as the stock calculator, applied to option contracts: find how many contracts to close at a target premium gain to recover the full premium you paid, letting the rest ride for free.</p>
+        </div>
+    </header>
+
+    <nav class="tabs">
+        <a href="index.html">Stocks</a>
+        <a href="options.html" class="active">Options</a>
+    </nav>
+
+    <main class="grid">
+        <section class="card">
+            <div class="card-head">
+                <h2>Position</h2>
+                <span class="idx">01</span>
+            </div>
+            <form id="calc-form">
+                <div class="field">
+                    <label for="premium">Premium paid per contract</label>
+                    <div class="input-row">
+                        <span class="prefix">$</span>
+                        <input type="number" id="premium" value="2.50" min="0" step="0.01" inputmode="decimal" />
+                    </div>
+                    <span class="hint">Quoted per share, e.g. $2.50 — 1 contract = 100 shares.</span>
+                </div>
+                <div class="field">
+                    <label for="contracts">Contracts bought</label>
+                    <div class="input-row">
+                        <span class="prefix">#</span>
+                        <input type="number" id="contracts" value="10" min="0" step="1" inputmode="decimal" />
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="gainPercent">Target premium gain</label>
+                    <div class="input-row">
+                        <input type="number" id="gainPercent" value="25" min="0" step="0.1" inputmode="decimal" />
+                        <span class="suffix">%</span>
+                    </div>
+                    <span class="hint">How much the premium needs to rise to trigger your close.</span>
+                </div>
+            </form>
+        </section>
+
+        <section class="card">
+            <div class="card-head">
+                <h2>Recovery Plan</h2>
+                <span class="idx">02</span>
+            </div>
+
+            <div class="warn" id="warn"></div>
+
+            <div class="results" id="results">
+                <div class="hero">
+                    <div class="hero-item">
+                        <div class="k">Sell premium</div>
+                        <div class="v" id="out-sellPrice">$0.00</div>
+                    </div>
+                    <div class="hero-item accent">
+                        <div class="k">Contracts to close</div>
+                        <div class="v" id="out-sharesRounded">0</div>
+                    </div>
+                    <div class="hero-item positive">
+                        <div class="k">Free contracts left</div>
+                        <div class="v" id="out-freeShares">0</div>
+                    </div>
+                </div>
+
+                <div class="bar-block">
+                    <div class="bar-labels">
+                        <span>Closed to recover cost — <strong id="lab-sold-pct">0%</strong></span>
+                        <span>Held for free — <strong id="lab-free-pct">0%</strong></span>
+                    </div>
+                    <div class="bar" role="img" aria-label="Portion of contracts closed to recover cost versus held for free">
+                        <div class="bar-fill sold" id="bar-sold"></div>
+                        <div class="bar-fill free" id="bar-free"></div>
+                    </div>
+                    <p class="bar-caption" id="bar-caption"></p>
+                </div>
+
+                <div class="ledger">
+                    <div class="ledger-row">
+                        <span class="label">Total premium paid</span>
+                        <span class="value" id="out-totalCost">$0.00</span>
+                    </div>
+                    <div class="ledger-row">
+                        <span class="label">Contracts to close, exact</span>
+                        <span class="value" id="out-sharesExact">0.0000</span>
+                    </div>
+                    <div class="ledger-row">
+                        <span class="label">Proceeds from that close</span>
+                        <span class="value" id="out-proceeds">$0.00</span>
+                    </div>
+                    <div class="ledger-row total">
+                        <span class="label">Surplus over cost</span>
+                        <span class="value" id="out-surplus">$0.00</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="about">
+        <div class="col">
+            <h3>The idea</h3>
+            <p>Identical logic to the stock version, just priced per contract instead of per share. Once the premium is up by your target gain, close only enough contracts to get back everything you paid — the rest are riding at zero net cost.</p>
+        </div>
+        <div class="col">
+            <h3>Why ×100</h3>
+            <p>Option premiums are quoted per share, but one contract controls 100 shares. A $2.50 premium costs $250 per contract — that's the real dollar amount at risk, and what this calculator works from.</p>
+        </div>
+        <div class="col">
+            <h3>Worth knowing</h3>
+            <p>This is a position-sizing technique, not investment advice. It doesn't account for time decay, assignment risk, or bid/ask spread — check your own numbers and the contract's actual liquidity before trading.</p>
+        </div>
+    </footer>
+</div>
+
+<script>
+    (function () {
+      var premiumEl = document.getElementById('premium');
+      var contractsEl = document.getElementById('contracts');
+      var gainEl = document.getElementById('gainPercent');
+      var warnEl = document.getElementById('warn');
+      var resultsEl = document.getElementById('results');
+
+      var out = {
+        sellPrice: document.getElementById('out-sellPrice'),
+        sharesRounded: document.getElementById('out-sharesRounded'),
+        freeShares: document.getElementById('out-freeShares'),
+        totalCost: document.getElementById('out-totalCost'),
+        sharesExact: document.getElementById('out-sharesExact'),
+        proceeds: document.getElementById('out-proceeds'),
+        surplus: document.getElementById('out-surplus')
+      };
+
+      var barSold = document.getElementById('bar-sold');
+      var barFree = document.getElementById('bar-free');
+      var labSoldPct = document.getElementById('lab-sold-pct');
+      var labFreePct = document.getElementById('lab-free-pct');
+      var barCaption = document.getElementById('bar-caption');
+
+      var CONTRACT_MULTIPLIER = 100;
+
+      function money(n) {
+        return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+
+      function warn(msg) {
+        warnEl.textContent = msg;
+        warnEl.classList.add('show');
+        resultsEl.classList.add('hidden');
+      }
+
+      function clearWarn() {
+        warnEl.classList.remove('show');
+        resultsEl.classList.remove('hidden');
+      }
+
+      var debounceTimer = null;
+      function scheduleRecalc() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(recalc, 150);
+      }
+
+      function recalc() {
+        var premiumRaw = premiumEl.value;
+        var contractsRaw = contractsEl.value;
+        var gainPercentRaw = gainEl.value;
+        var contracts = parseFloat(contractsRaw);
+
+        if (premiumRaw === '' || contractsRaw === '' || gainPercentRaw === '') {
+          warn('Fill in a premium, contract count, and target gain to see the plan.');
+          return;
+        }
+
+        var premium = parseFloat(premiumRaw);
+        // Reuses the same cost-recovery endpoint as the stock calculator:
+        // "cost per contract" (premium x 100 shares) stands in for "buy price",
+        // and "contracts" stands in for "shares" — the math is identical.
+        var costPerContract = premium * CONTRACT_MULTIPLIER;
+
+        var url = '/api/calculate'
+          + '?buyPrice=' + encodeURIComponent(costPerContract)
+          + '&quantity=' + encodeURIComponent(contractsRaw)
+          + '&gainPercent=' + encodeURIComponent(gainPercentRaw);
+
+        fetch(url)
+          .then(function (res) {
+            return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+          })
+          .then(function (result) {
+            if (!result.ok) {
+              warn(result.data.error || 'Something went wrong.');
+              return;
+            }
+            clearWarn();
+            render(result.data, contracts);
+          })
+          .catch(function () {
+            warn('Could not reach the TradingWise server. Make sure TradingWiseServer is running (Run it in IntelliJ, then reload this page from http://localhost:8080/).');
+          });
+      }
+
+      function render(r, contracts) {
+        var sellPremium = Number(r.sellPrice) / CONTRACT_MULTIPLIER;
+        var contractsToClose = Number(r.sharesToSellRounded);
+        var freeContracts = Number(r.freeSharesRemaining);
+        var totalPremiumPaid = Number(r.totalCost);
+
+        out.sellPrice.textContent = money(sellPremium);
+        out.sharesRounded.textContent = contractsToClose.toLocaleString('en-US');
+        out.freeShares.textContent = freeContracts.toLocaleString('en-US');
+        out.totalCost.textContent = money(totalPremiumPaid);
+        out.sharesExact.textContent = Number(r.sharesToSellExact).toFixed(4);
+        out.proceeds.textContent = money(Number(r.actualProceeds));
+        out.surplus.textContent = money(Number(r.surplus));
+
+        var soldPct = (contractsToClose / contracts) * 100;
+        var freePct = 100 - soldPct;
+        barSold.style.width = soldPct + '%';
+        barFree.style.width = freePct + '%';
+        labSoldPct.textContent = soldPct.toFixed(1) + '%';
+        labFreePct.textContent = freePct.toFixed(1) + '%';
+        barSold.textContent = soldPct > 14 ? contractsToClose + ' closed' : '';
+        barFree.textContent = freePct > 14 ? freeContracts + ' free' : '';
+
+        if (freeContracts === 0) {
+          barCaption.textContent = 'At this gain, every contract is needed to recover cost — none are left over.';
+        } else {
+          barCaption.textContent = 'Close ' + contractsToClose + ' of ' + contracts + ' contracts at ' + money(sellPremium) + ' premium to recover your ' + money(totalPremiumPaid) + ' cost. The remaining ' + freeContracts + ' contracts are held at zero net cost.';
+        }
+      }
+
+      [premiumEl, contractsEl, gainEl].forEach(function (el) {
+        el.addEventListener('input', scheduleRecalc);
+      });
+
+      recalc();
+    })();
+</script>

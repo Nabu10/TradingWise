@@ -5,19 +5,34 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Serves the TradingWise web UI and a JSON API backed by
  * TradingCostPriceCalculator, so the browser talks to the real Java
- * calculation instead of a duplicate JS copy of the math.
+ * calculation instead of a duplicate JS copy of the math. Also proxies
+ * live stock quotes from Finnhub so the API key never reaches the browser.
  */
 public class TradingWiseServer {
+
+    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(5))
+            .build();
+
+    private static final Pattern CURRENT_PRICE_FIELD = Pattern.compile("\"c\":([0-9.\\-]+)");
 
     public static void main(String[] args) throws IOException {
         int port = 8080;
@@ -27,22 +42,34 @@ public class TradingWiseServer {
         }
 
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
-        server.createContext("/", TradingWiseServer::serveIndex);
+        server.createContext("/", TradingWiseServer::serveStatic);
         server.createContext("/api/calculate", TradingWiseServer::serveCalculate);
+        server.createContext("/api/quote", TradingWiseServer::serveQuote);
         server.setExecutor(null);
         server.start();
         System.out.println("TradingWise running on port " + port);
     }
 
-    private static void serveIndex(HttpExchange exchange) throws IOException {
-        Path path = Path.of("index.html");
-        if (!Files.exists(path)) {
-            respond(exchange, 404, "text/plain",
-                    "index.html not found. Run this from the project root, not found at: " + path.toAbsolutePath());
+    private static void serveStatic(HttpExchange exchange) throws IOException {
+        String requestPath = exchange.getRequestURI().getPath();
+        String fileName = requestPath.equals("/") ? "index.html" : requestPath.substring(1);
+
+        // Only serve plain filenames from the project root — no subdirectories,
+        // no ".." traversal outside it.
+        if (fileName.contains("/") || fileName.contains("..")) {
+            respond(exchange, 404, "text/plain", "Not found.");
             return;
         }
+
+        Path path = Path.of(fileName);
+        if (!Files.exists(path)) {
+            respond(exchange, 404, "text/plain", fileName + " not found at: " + path.toAbsolutePath());
+            return;
+        }
+
+        String contentType = fileName.endsWith(".html") ? "text/html" : "application/octet-stream";
         byte[] body = Files.readAllBytes(path);
-        respondBytes(exchange, 200, "text/html", body);
+        respondBytes(exchange, 200, contentType, body);
     }
 
     private static void serveCalculate(HttpExchange exchange) throws IOException {
@@ -73,6 +100,58 @@ public class TradingWiseServer {
             respondJson(exchange, 200, json);
         } catch (Exception e) {
             respondJson(exchange, 400, "{\"error\":\"Invalid input — buyPrice, quantity, and gainPercent must be numbers\"}");
+        }
+    }
+
+    private static void serveQuote(HttpExchange exchange) throws IOException {
+        Map<String, String> params = parseQuery(exchange.getRequestURI().getQuery());
+        String ticker = params.get("ticker");
+        if (ticker == null || ticker.isBlank()) {
+            respondJson(exchange, 400, "{\"error\":\"Missing ticker\"}");
+            return;
+        }
+        ticker = ticker.trim().toUpperCase();
+
+        String apiKey = System.getenv("FINNHUB_API_KEY");
+        if (apiKey == null || apiKey.isBlank()) {
+            respondJson(exchange, 500,
+                    "{\"error\":\"Server is missing FINNHUB_API_KEY. Set that environment variable (get a free key at finnhub.io) and restart the server.\"}");
+            return;
+        }
+
+        String url = "https://finnhub.io/api/v1/quote?symbol="
+                + URLEncoder.encode(ticker, StandardCharsets.UTF_8)
+                + "&token=" + URLEncoder.encode(apiKey, StandardCharsets.UTF_8);
+
+        try {
+            HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+                    .timeout(Duration.ofSeconds(5))
+                    .GET()
+                    .build();
+            HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                respondJson(exchange, 502, "{\"error\":\"Quote provider returned an error. Try again shortly.\"}");
+                return;
+            }
+
+            Matcher matcher = CURRENT_PRICE_FIELD.matcher(response.body());
+            if (!matcher.find()) {
+                respondJson(exchange, 502, "{\"error\":\"Unexpected response from quote provider.\"}");
+                return;
+            }
+
+            double currentPrice = Double.parseDouble(matcher.group(1));
+            if (currentPrice <= 0) {
+                respondJson(exchange, 404,
+                        "{\"error\":\"No live price found for ticker '" + ticker + "'. Check the symbol and try again.\"}");
+                return;
+            }
+
+            String json = "{\"ticker\":\"" + ticker + "\",\"currentPrice\":" + currentPrice + "}";
+            respondJson(exchange, 200, json);
+        } catch (Exception e) {
+            respondJson(exchange, 502, "{\"error\":\"Could not reach the quote provider. Try again in a moment.\"}");
         }
     }
 
