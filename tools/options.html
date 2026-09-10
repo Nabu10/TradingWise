@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Options calculator — TradingWise</title>
+  <meta name="description" content="Cost-recovery calculator for options with ×100 multiplier." />
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="../assets/css/site.css" />
+  
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="inner">
+      <a class="logo" href="../index.html">Trading<span>Wise</span></a>
+      <nav class="nav" aria-label="Primary">
+          <a href="../index.html">Home</a>
+          <a href="../tools/stocks.html">Stocks</a>
+          <a href="../tools/options.html" aria-current="page">Options</a>
+          <a href="../strategy.html">Strategy</a>
+          <a href="../pricing.html">Pricing</a>
+          <a href="../about.html">About</a>
+      </nav>
+      <div class="nav-actions">
+        <button type="button" class="icon-btn mobile-nav-toggle" data-nav-toggle aria-expanded="false" aria-label="Menu">☰</button>
+        <button type="button" class="icon-btn" data-theme-toggle aria-label="Toggle theme">◐</button>
+        <a class="btn btn-primary" href="../tools/stocks.html">Open tools</a>
+      </div>
+    </div>
+  </header>
+  <main id="main" class="wrap">
+
+    <div class="page-title">
+      <p class="eyebrow">Tools · Options</p>
+      <h1>Options calculator</h1>
+      <p class="lede">Same cost-recovery math with the standard ×100 contract multiplier applied to premium.</p>
+    </div>
+    <div class="tabs">
+      <a href="stocks.html">Stocks</a>
+      <a href="options.html" aria-current="page">Options</a>
+    </div>
+    <div class="tool-grid">
+      <div class="card">
+        <div class="card-head"><h2>Inputs</h2><span class="idx">01</span></div>
+        <form class="stack" id="calc-form" onsubmit="return false;">
+          <div class="field">
+            <label for="premium">Premium paid</label>
+            <div class="input-row"><span class="prefix">$</span><input id="premium" type="number" step="any" min="0" value="2.50" /></div>
+            <span class="hint">Per-share premium; cost per contract = premium × 100</span>
+          </div>
+          <div class="field">
+            <label for="contracts">Contracts</label>
+            <div class="input-row"><input id="contracts" type="number" step="any" min="0" value="10" /><span class="suffix">ct</span></div>
+          </div>
+          <div class="field">
+            <label for="gainPercent">Target gain</label>
+            <div class="input-row"><input id="gainPercent" type="number" step="any" min="0" value="50" /><span class="suffix">%</span></div>
+          </div>
+        </form>
+        <div id="warn" class="warn" role="status"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Plan</h2><span class="idx">02</span></div>
+        <div id="results" class="results">
+          <div class="hero-metrics">
+            <div class="hero-item accent"><div class="k">Close premium</div><div class="v" id="out-sellPrice">—</div></div>
+            <div class="hero-item"><div class="k">Contracts to close</div><div class="v" id="out-sharesRounded">—</div></div>
+            <div class="hero-item positive"><div class="k">Free contracts</div><div class="v" id="out-freeShares">—</div></div>
+          </div>
+          <div class="bar-block">
+            <div class="bar-labels"><span>Closed <strong id="lab-sold-pct">—</strong></span><span>Free <strong id="lab-free-pct">—</strong></span></div>
+            <div class="bar"><div class="bar-fill sold" id="bar-sold" style="width:0%"></div><div class="bar-fill free" id="bar-free" style="width:0%"></div></div>
+            <p class="bar-caption" id="bar-caption"></p>
+          </div>
+          <div class="ledger">
+            <div class="ledger-row"><span class="label">Total premium paid</span><span class="value" id="out-totalCost">—</span></div>
+            <div class="ledger-row"><span class="label">Exact contracts to close</span><span class="value" id="out-sharesExact">—</span></div>
+            <div class="ledger-row"><span class="label">Actual proceeds</span><span class="value" id="out-proceeds">—</span></div>
+            <div class="ledger-row total"><span class="label">Surplus over cost</span><span class="value" id="out-surplus">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+  <footer class="site-footer">
+    <div class="inner">
+      <div>
+        <a class="logo" href="../index.html">Trading<span>Wise</span></a>
+        <p class="fine">Cost-recovery planning for equities and options. Educational tools — not investment advice.</p>
+      </div>
+      <div>
+        <h3>Tools</h3>
+        <a href="../tools/stocks.html">Stocks calculator</a>
+        <a href="../tools/options.html">Options calculator</a>
+        <a href="../strategy.html">The method</a>
+      </div>
+      <div>
+        <h3>Firm</h3>
+        <a href="../pricing.html">Pricing</a>
+        <a href="../about.html">About</a>
+        <a href="../disclaimer.html">Disclaimer</a>
+      </div>
+      <div>
+        <h3>Access</h3>
+        <a href="../pricing.html#waitlist">Pro waitlist</a>
+        <a href="../tools/stocks.html">Free calculators</a>
+      </div>
+    </div>
+    <div class="foot-bar">
+      <span>© TradingWise</span>
+      <span>Not a broker · No advice · Educational only</span>
+    </div>
+  </footer>
+  <script src="../assets/js/site.js"></script>
+  <script src="../assets/js/calc-options.js"></script>
+</body>
+</html>
