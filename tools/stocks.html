@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stocks calculator — TradingWise</title>
+  <meta name="description" content="Cost-recovery calculator for stock positions." />
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="../assets/css/site.css" />
+  
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="inner">
+      <a class="logo" href="../index.html">Trading<span>Wise</span></a>
+      <nav class="nav" aria-label="Primary">
+          <a href="../index.html">Home</a>
+          <a href="../tools/stocks.html" aria-current="page">Stocks</a>
+          <a href="../tools/options.html">Options</a>
+          <a href="../strategy.html">Strategy</a>
+          <a href="../pricing.html">Pricing</a>
+          <a href="../about.html">About</a>
+      </nav>
+      <div class="nav-actions">
+        <button type="button" class="icon-btn mobile-nav-toggle" data-nav-toggle aria-expanded="false" aria-label="Menu">☰</button>
+        <button type="button" class="icon-btn" data-theme-toggle aria-label="Toggle theme">◐</button>
+        <a class="btn btn-primary" href="../tools/stocks.html">Open tools</a>
+      </div>
+    </div>
+  </header>
+  <main id="main" class="wrap">
+
+    <div class="page-title">
+      <p class="eyebrow">Tools · Equities</p>
+      <h1>Stocks calculator</h1>
+      <p class="lede">Plan how many shares to sell at your target gain so cost is recovered and the rest rides free.</p>
+    </div>
+    <div class="tabs">
+      <a href="stocks.html" aria-current="page">Stocks</a>
+      <a href="options.html">Options</a>
+    </div>
+    <div class="tool-grid">
+      <div class="card">
+        <div class="card-head"><h2>Inputs</h2><span class="idx">01</span></div>
+        <form class="stack" id="calc-form" onsubmit="return false;">
+          <div class="field">
+            <label for="ticker">Ticker (optional quote)</label>
+            <div class="input-row"><input id="ticker" type="text" placeholder="AAPL" autocomplete="off" /></div>
+            <div class="quote-row">
+              <button type="button" class="quote-btn" id="fetchQuoteBtn">Fetch quote</button>
+              <span id="quoteResult" class="hint"></span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="buyPrice">Buy price</label>
+            <div class="input-row"><span class="prefix">$</span><input id="buyPrice" type="number" step="any" min="0" value="100" /></div>
+          </div>
+          <div class="field">
+            <label for="quantity">Shares</label>
+            <div class="input-row"><input id="quantity" type="number" step="any" min="0" value="100" /><span class="suffix">sh</span></div>
+          </div>
+          <div class="field">
+            <label for="gainPercent">Target gain</label>
+            <div class="input-row"><input id="gainPercent" type="number" step="any" min="0" value="11" /><span class="suffix">%</span></div>
+            <span class="hint">Classic example: $100 · 100 shares · 11%</span>
+          </div>
+        </form>
+        <div id="warn" class="warn" role="status"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Plan</h2><span class="idx">02</span></div>
+        <div id="results" class="results">
+          <div class="hero-metrics">
+            <div class="hero-item accent"><div class="k">Sell price</div><div class="v" id="out-sellPrice">—</div></div>
+            <div class="hero-item"><div class="k">Shares to sell</div><div class="v" id="out-sharesRounded">—</div></div>
+            <div class="hero-item positive"><div class="k">Free shares</div><div class="v" id="out-freeShares">—</div></div>
+          </div>
+          <div class="bar-block">
+            <div class="bar-labels"><span>Sold <strong id="lab-sold-pct">—</strong></span><span>Free <strong id="lab-free-pct">—</strong></span></div>
+            <div class="bar"><div class="bar-fill sold" id="bar-sold" style="width:0%"></div><div class="bar-fill free" id="bar-free" style="width:0%"></div></div>
+            <p class="bar-caption" id="bar-caption"></p>
+          </div>
+          <div class="ledger">
+            <div class="ledger-row"><span class="label">Total cost</span><span class="value" id="out-totalCost">—</span></div>
+            <div class="ledger-row"><span class="label">Exact shares to sell</span><span class="value" id="out-sharesExact">—</span></div>
+            <div class="ledger-row"><span class="label">Actual proceeds</span><span class="value" id="out-proceeds">—</span></div>
+            <div class="ledger-row total"><span class="label">Surplus over cost</span><span class="value" id="out-surplus">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+  <footer class="site-footer">
+    <div class="inner">
+      <div>
+        <a class="logo" href="../index.html">Trading<span>Wise</span></a>
+        <p class="fine">Cost-recovery planning for equities and options. Educational tools — not investment advice.</p>
+      </div>
+      <div>
+        <h3>Tools</h3>
+        <a href="../tools/stocks.html">Stocks calculator</a>
+        <a href="../tools/options.html">Options calculator</a>
+        <a href="../strategy.html">The method</a>
+      </div>
+      <div>
+        <h3>Firm</h3>
+        <a href="../pricing.html">Pricing</a>
+        <a href="../about.html">About</a>
+        <a href="../disclaimer.html">Disclaimer</a>
+      </div>
+      <div>
+        <h3>Access</h3>
+        <a href="../pricing.html#waitlist">Pro waitlist</a>
+        <a href="../tools/stocks.html">Free calculators</a>
+      </div>
+    </div>
+    <div class="foot-bar">
+      <span>© TradingWise</span>
+      <span>Not a broker · No advice · Educational only</span>
+    </div>
+  </footer>
+  <script src="../assets/js/site.js"></script>
+  <script src="../assets/js/calc-stocks.js"></script>
+</body>
+</html>

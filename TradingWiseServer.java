@@ -2,6 +2,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.net.InetSocketAddress;
@@ -21,10 +22,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Serves the TradingWise web UI and a JSON API backed by
- * TradingCostPriceCalculator, so the browser talks to the real Java
- * calculation instead of a duplicate JS copy of the math. Also proxies
- * live stock quotes from Finnhub so the API key never reaches the browser.
+ * Serves the TradingWise firm site and JSON APIs backed by
+ * TradingCostPriceCalculator. Proxies Finnhub quotes so the API key
+ * never reaches the browser. Accepts Pro waitlist emails (logged only).
  */
 public class TradingWiseServer {
 
@@ -33,6 +33,7 @@ public class TradingWiseServer {
             .build();
 
     private static final Pattern CURRENT_PRICE_FIELD = Pattern.compile("\"c\":([0-9.\\-]+)");
+    private static final Pattern EMAIL_FIELD = Pattern.compile("\"email\"\\s*:\\s*\"([^\"]+)\"");
 
     public static void main(String[] args) throws IOException {
         int port = 8080;
@@ -45,31 +46,68 @@ public class TradingWiseServer {
         server.createContext("/", TradingWiseServer::serveStatic);
         server.createContext("/api/calculate", TradingWiseServer::serveCalculate);
         server.createContext("/api/quote", TradingWiseServer::serveQuote);
+        server.createContext("/api/waitlist", TradingWiseServer::serveWaitlist);
         server.setExecutor(null);
         server.start();
         System.out.println("TradingWise running on port " + port);
     }
 
     private static void serveStatic(HttpExchange exchange) throws IOException {
+        if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())
+                && !"HEAD".equalsIgnoreCase(exchange.getRequestMethod())) {
+            respond(exchange, 405, "text/plain", "Method not allowed.");
+            return;
+        }
+
         String requestPath = exchange.getRequestURI().getPath();
         String fileName = requestPath.equals("/") ? "index.html" : requestPath.substring(1);
 
-        // Only serve plain filenames from the project root — no subdirectories,
-        // no ".." traversal outside it.
-        if (fileName.contains("/") || fileName.contains("..")) {
+        // Allow nested assets/ and tools/ paths; block traversal.
+        if (fileName.contains("..") || fileName.startsWith("/") || fileName.contains("\\")) {
             respond(exchange, 404, "text/plain", "Not found.");
             return;
         }
 
-        Path path = Path.of(fileName);
-        if (!Files.exists(path)) {
+        boolean allowed =
+                !fileName.contains("/")
+                || fileName.startsWith("assets/")
+                || fileName.startsWith("tools/");
+        if (!allowed) {
+            respond(exchange, 404, "text/plain", "Not found.");
+            return;
+        }
+
+        Path path = Path.of(fileName).normalize();
+        if (!path.equals(Path.of(fileName)) || fileName.isBlank()) {
+            respond(exchange, 404, "text/plain", "Not found.");
+            return;
+        }
+        if (!Files.exists(path) || !Files.isRegularFile(path)) {
             respond(exchange, 404, "text/plain", fileName + " not found at: " + path.toAbsolutePath());
             return;
         }
 
-        String contentType = fileName.endsWith(".html") ? "text/html" : "application/octet-stream";
+        String contentType = contentTypeFor(fileName);
         byte[] body = Files.readAllBytes(path);
+        if ("HEAD".equalsIgnoreCase(exchange.getRequestMethod())) {
+            exchange.getResponseHeaders().add("Content-Type", contentType + "; charset=utf-8");
+            exchange.sendResponseHeaders(200, body.length);
+            exchange.close();
+            return;
+        }
         respondBytes(exchange, 200, contentType, body);
+    }
+
+    private static String contentTypeFor(String fileName) {
+        String lower = fileName.toLowerCase();
+        if (lower.endsWith(".html")) return "text/html";
+        if (lower.endsWith(".css")) return "text/css";
+        if (lower.endsWith(".js")) return "application/javascript";
+        if (lower.endsWith(".svg")) return "image/svg+xml";
+        if (lower.endsWith(".json")) return "application/json";
+        if (lower.endsWith(".png")) return "image/png";
+        if (lower.endsWith(".ico")) return "image/x-icon";
+        return "application/octet-stream";
     }
 
     private static void serveCalculate(HttpExchange exchange) throws IOException {
@@ -152,6 +190,33 @@ public class TradingWiseServer {
             respondJson(exchange, 200, json);
         } catch (Exception e) {
             respondJson(exchange, 502, "{\"error\":\"Could not reach the quote provider. Try again in a moment.\"}");
+        }
+    }
+
+    private static void serveWaitlist(HttpExchange exchange) throws IOException {
+        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+            respondJson(exchange, 405, "{\"error\":\"POST required\"}");
+            return;
+        }
+
+        String body = readBody(exchange);
+        String email = null;
+        Matcher m = EMAIL_FIELD.matcher(body == null ? "" : body);
+        if (m.find()) {
+            email = m.group(1).trim();
+        }
+        if (email == null || email.isBlank() || !email.contains("@") || email.indexOf('@') < 1) {
+            respondJson(exchange, 400, "{\"error\":\"Valid email required\"}");
+            return;
+        }
+
+        System.out.println("waitlist: " + email);
+        respondJson(exchange, 200, "{\"ok\":true}");
+    }
+
+    private static String readBody(HttpExchange exchange) throws IOException {
+        try (InputStream in = exchange.getRequestBody()) {
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         }
     }
 

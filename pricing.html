@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pricing — TradingWise</title>
+  <meta name="description" content="Free vs Pro placeholders and Pro waitlist." />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="assets/css/site.css" />
+  
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="inner">
+      <a class="logo" href="index.html">Trading<span>Wise</span></a>
+      <nav class="nav" aria-label="Primary">
+          <a href="index.html">Home</a>
+          <a href="tools/stocks.html">Stocks</a>
+          <a href="tools/options.html">Options</a>
+          <a href="strategy.html">Strategy</a>
+          <a href="pricing.html" aria-current="page">Pricing</a>
+          <a href="about.html">About</a>
+      </nav>
+      <div class="nav-actions">
+        <button type="button" class="icon-btn mobile-nav-toggle" data-nav-toggle aria-expanded="false" aria-label="Menu">☰</button>
+        <button type="button" class="icon-btn" data-theme-toggle aria-label="Toggle theme">◐</button>
+        <a class="btn btn-primary" href="tools/stocks.html">Open tools</a>
+      </div>
+    </div>
+  </header>
+  <main id="main" class="wrap">
+
+    <div class="page-title">
+      <p class="eyebrow">Access</p>
+      <h1>Pricing</h1>
+      <p class="lede">Free tools today. Pro is a placeholder — join the waitlist. No payment processing yet.</p>
+    </div>
+    <div class="price-grid">
+      <article class="card price-card">
+        <p class="tier">Free</p>
+        <p class="amount">$0 <span>/ forever</span></p>
+        <ul>
+          <li>Stocks cost-recovery calculator</li>
+          <li>Options calculator (×100)</li>
+          <li>Live equity quotes via Finnhub (self-hosted key)</li>
+          <li>Local Java server — your machine, your data</li>
+        </ul>
+        <a class="btn btn-primary" href="tools/stocks.html">Open tools</a>
+      </article>
+      <article class="card price-card featured">
+        <span class="badge">Waitlist</span>
+        <p class="tier">Pro</p>
+        <p class="amount">TBD <span>/ coming</span></p>
+        <ul>
+          <li class="locked">Saved scenarios &amp; history</li>
+          <li class="locked">Multi-position workbook</li>
+          <li class="locked">Exportable reports</li>
+          <li class="locked">Priority product updates</li>
+        </ul>
+        <a class="btn" href="#waitlist">Join waitlist</a>
+      </article>
+    </div>
+    <section class="card waitlist" id="waitlist">
+      <h2 style="font-family:var(--font-serif);font-size:1.35rem;margin:0 0 .5rem">Pro waitlist</h2>
+      <p style="font-family:var(--font-sans);color:var(--ink-soft);margin:0 0 1rem;font-size:.92rem">Leave an email. We will not charge anything yet — this is interest only.</p>
+      <form id="waitlist-form">
+        <div class="field">
+          <label for="waitlist-email">Email</label>
+          <div class="input-row"><input id="waitlist-email" name="email" type="email" required placeholder="you@firm.com" autocomplete="email" /></div>
+        </div>
+        <button type="submit" class="btn btn-primary">Join waitlist</button>
+      </form>
+      <p id="waitlist-msg" class="msg" role="status"></p>
+    </section>
+
+  </main>
+  <footer class="site-footer">
+    <div class="inner">
+      <div>
+        <a class="logo" href="index.html">Trading<span>Wise</span></a>
+        <p class="fine">Cost-recovery planning for equities and options. Educational tools — not investment advice.</p>
+      </div>
+      <div>
+        <h3>Tools</h3>
+        <a href="tools/stocks.html">Stocks calculator</a>
+        <a href="tools/options.html">Options calculator</a>
+        <a href="strategy.html">The method</a>
+      </div>
+      <div>
+        <h3>Firm</h3>
+        <a href="pricing.html">Pricing</a>
+        <a href="about.html">About</a>
+        <a href="disclaimer.html">Disclaimer</a>
+      </div>
+      <div>
+        <h3>Access</h3>
+        <a href="pricing.html#waitlist">Pro waitlist</a>
+        <a href="tools/stocks.html">Free calculators</a>
+      </div>
+    </div>
+    <div class="foot-bar">
+      <span>© TradingWise</span>
+      <span>Not a broker · No advice · Educational only</span>
+    </div>
+  </footer>
+  <script src="assets/js/site.js"></script>
+  
+</body>
+</html>
