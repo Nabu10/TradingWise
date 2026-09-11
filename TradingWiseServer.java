@@ -46,6 +46,7 @@ public class TradingWiseServer {
         server.createContext("/", TradingWiseServer::serveStatic);
         server.createContext("/api/calculate", TradingWiseServer::serveCalculate);
         server.createContext("/api/quote", TradingWiseServer::serveQuote);
+        server.createContext("/api/quotes", TradingWiseServer::serveQuotes);
         server.createContext("/api/waitlist", TradingWiseServer::serveWaitlist);
         server.setExecutor(null);
         server.start();
