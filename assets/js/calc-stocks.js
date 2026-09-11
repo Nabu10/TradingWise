@@ -141,15 +141,17 @@
   var tickerEl = document.getElementById("ticker");
   var fetchQuoteBtn = document.getElementById("fetchQuoteBtn");
   var quoteResultEl = document.getElementById("quoteResult");
+  var quoteTimer = null;
 
   function fetchQuote() {
-    var ticker = tickerEl.value.trim();
+    var ticker = tickerEl.value.trim().toUpperCase();
     if (!ticker) {
       quoteResultEl.textContent = "Enter a ticker first.";
       return;
     }
+    tickerEl.value = ticker;
     fetchQuoteBtn.disabled = true;
-    quoteResultEl.textContent = "Fetching…";
+    quoteResultEl.textContent = "Fetching latest quote…";
 
     fetch("/api/quote?ticker=" + encodeURIComponent(ticker))
       .then(function (res) {
@@ -162,7 +164,11 @@
           return;
         }
         var price = Number(result.data.currentPrice);
-        quoteResultEl.innerHTML = "Current: $" + price.toFixed(2) + ' — <button type="button" class="quote-link" id="useAsBuyPrice">use as buy price</button>';
+        if (!(price > 0)) {
+          quoteResultEl.textContent = "No quote available for " + ticker + ".";
+          return;
+        }
+        quoteResultEl.innerHTML = "<strong>" + ticker + "</strong> · " + money(price) + ' <span class="quote-source">latest quote</span> · <button type="button" class="quote-link" id="useAsBuyPrice">Use current price</button>';
         document.getElementById("useAsBuyPrice").addEventListener("click", function () {
           buyEl.value = price.toFixed(2);
           scheduleRecalc();
@@ -170,7 +176,7 @@
       })
       .catch(function () {
         fetchQuoteBtn.disabled = false;
-        quoteResultEl.textContent = "Network error — could not reach the server.";
+        quoteResultEl.textContent = "Network error — could not reach the quote service.";
       });
   }
 
@@ -178,8 +184,18 @@
   tickerEl.addEventListener("keydown", function (e) {
     if (e.key === "Enter") {
       e.preventDefault();
+      clearTimeout(quoteTimer);
       fetchQuote();
     }
+  });
+  tickerEl.addEventListener("input", function () {
+    clearTimeout(quoteTimer);
+    var ticker = tickerEl.value.trim();
+    if (!ticker) {
+      quoteResultEl.textContent = "";
+      return;
+    }
+    quoteTimer = setTimeout(fetchQuote, 700);
   });
 
   recalc();
