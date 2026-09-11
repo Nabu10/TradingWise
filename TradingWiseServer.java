@@ -164,7 +164,7 @@ public class TradingWiseServer {
         String url = "https://finnhub.io/api/v1/quote?symbol=" + URLEncoder.encode(symbol, StandardCharsets.UTF_8)
                 + "&token=" + URLEncoder.encode(apiKey, StandardCharsets.UTF_8);
         HttpRequest request = HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofSeconds(5)).GET().build();
-        HttpResponse<String> response = HTTP_CLIENT.send(request, HttpRequest.BodyHandlers.ofString());
+        HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() != 200) throw new IOException("Quote provider returned HTTP " + response.statusCode());
         return response.body();
     }
