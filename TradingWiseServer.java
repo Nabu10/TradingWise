@@ -32,9 +32,12 @@ public class TradingWiseServer {
             .connectTimeout(Duration.ofSeconds(5))
             .build();
 
-    private static final Pattern CURRENT_PRICE_FIELD = Pattern.compile("\"c\":([0-9.\\-]+)");
-    private static final Pattern CHANGE_PERCENT_FIELD = Pattern.compile("\"dp\":([0-9.\\-]+)");
-    private static final Pattern EMAIL_FIELD = Pattern.compile("\"email\"\\s*:\\s*\"([^\"]+)\"");
+    private static final Pattern CURRENT_PRICE_FIELD = Pattern.compile("\\\"c\\\":([0-9.\\\\-]+)");
+    private static final Pattern CHANGE_FIELD = Pattern.compile("\\\"d\\\":([0-9.\\\\-]+)");
+    private static final Pattern CHANGE_PERCENT_FIELD = Pattern.compile("\\\"dp\\\":([0-9.\\\\-]+)");
+    private static final Pattern PREVIOUS_CLOSE_FIELD = Pattern.compile("\\\"pc\\\":([0-9.\\\\-]+)");
+    private static final Pattern VOLUME_FIELD = Pattern.compile("\\\"v\\\":([0-9.\\\\-]+)");
+    private static final Pattern EMAIL_FIELD = Pattern.compile("\\\"email\\\"\\\\s*:\\\\s*\\\"([^\\\"]+)\\\"");
 
     public static void main(String[] args) throws IOException {
         int port = 8080;
@@ -64,7 +67,6 @@ public class TradingWiseServer {
         String requestPath = exchange.getRequestURI().getPath();
         String fileName = requestPath.equals("/") ? "index.html" : requestPath.substring(1);
 
-        // Allow nested assets/ and tools/ paths; block traversal.
         if (fileName.contains("..") || fileName.startsWith("/") || fileName.contains("\\")) {
             respond(exchange, 404, "text/plain", "Not found.");
             return;
@@ -155,46 +157,31 @@ public class TradingWiseServer {
         String apiKey = System.getenv("FINNHUB_API_KEY");
         if (apiKey == null || apiKey.isBlank()) {
             respondJson(exchange, 500,
-                    "{\"error\":\"Server is missing FINNHUB_API_KEY. Set that environment variable (get a free key at finnhub.io) and restart the server.\"}");
+                    "{\"error\":\"Server is missing FINNHUB_API_KEY. Set that environment variable and restart the server.\"}");
             return;
         }
 
-        String url = "https://finnhub.io/api/v1/quote?symbol="
-                + URLEncoder.encode(ticker, StandardCharsets.UTF_8)
-                + "&token=" + URLEncoder.encode(apiKey, StandardCharsets.UTF_8);
-
         try {
-            HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                    .timeout(Duration.ofSeconds(5))
-                    .GET()
-                    .build();
-            HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() != 200) {
-                respondJson(exchange, 502, "{\"error\":\"Quote provider returned an error. Try again shortly.\"}");
-                return;
-            }
-
-            Matcher matcher = CURRENT_PRICE_FIELD.matcher(response.body());
-            if (!matcher.find()) {
-                respondJson(exchange, 502, "{\"error\":\"Unexpected response from quote provider.\"}");
-                return;
-            }
-
-            double currentPrice = Double.parseDouble(matcher.group(1));
-            if (currentPrice <= 0) {
+            String body = fetchQuoteBody(ticker, apiKey);
+            QuoteData quote = parseQuote(body);
+            if (quote.currentPrice == null || quote.currentPrice <= 0) {
                 respondJson(exchange, 404,
-                        "{\"error\":\"No live price found for ticker '" + ticker + "'. Check the symbol and try again.\"}");
+                        "{\"error\":\"No quote found for ticker '" + ticker + "'. Check the symbol and try again.\"}");
                 return;
             }
 
-            String json = "{\"ticker\":\"" + ticker + "\",\"currentPrice\":" + currentPrice + "}";
-            respondJson(exchange, 200, json);
+            StringBuilder json = new StringBuilder("{\"ticker\":\"").append(ticker)
+                    .append("\",\"currentPrice\":").append(quote.currentPrice)
+                    .append(",\"change\":").append(numberOrNull(quote.change))
+                    .append(",\"changePercent\":").append(numberOrNull(quote.changePercent))
+                    .append(",\"previousClose\":").append(numberOrNull(quote.previousClose))
+                    .append(",\"volume\":").append(numberOrNull(quote.volume))
+                    .append("}");
+            respondJson(exchange, 200, json.toString());
         } catch (Exception e) {
             respondJson(exchange, 502, "{\"error\":\"Could not reach the quote provider. Try again in a moment.\"}");
         }
     }
-
 
     private static void serveQuotes(HttpExchange exchange) throws IOException {
         if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())
@@ -209,12 +196,12 @@ public class TradingWiseServer {
             symbolsParam = "SPY,QQQ,DIA,IWM,TLT,GLD";
         }
 
-        String[] symbols = symbolsParam.split(",");
         String apiKey = System.getenv("FINNHUB_API_KEY");
         boolean missingKey = apiKey == null || apiKey.isBlank();
-
+        String[] symbols = symbolsParam.split(",");
         StringBuilder json = new StringBuilder("[");
         boolean any = false;
+
         for (String raw : symbols) {
             String symbol = raw.trim().toUpperCase();
             if (symbol.isEmpty()) continue;
@@ -222,58 +209,76 @@ public class TradingWiseServer {
             any = true;
 
             if (missingKey) {
-                json.append("{\"symbol\":\"").append(symbol)
-                        .append("\",\"price\":null,\"changePercent\":null,\"offline\":true}");
+                appendOfflineQuote(json, symbol);
                 continue;
             }
 
             try {
-                String url = "https://finnhub.io/api/v1/quote?symbol="
-                        + URLEncoder.encode(symbol, StandardCharsets.UTF_8)
-                        + "&token=" + URLEncoder.encode(apiKey, StandardCharsets.UTF_8);
-                HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                        .timeout(Duration.ofSeconds(5))
-                        .GET()
-                        .build();
-                HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-                if (response.statusCode() != 200) {
-                    json.append("{\"symbol\":\"").append(symbol)
-                            .append("\",\"price\":null,\"changePercent\":null,\"offline\":true}");
+                QuoteData quote = parseQuote(fetchQuoteBody(symbol, apiKey));
+                if (quote.currentPrice == null || quote.currentPrice <= 0) {
+                    appendOfflineQuote(json, symbol);
                     continue;
                 }
-
-                String body = response.body();
-                Matcher priceMatcher = CURRENT_PRICE_FIELD.matcher(body);
-                if (!priceMatcher.find()) {
-                    json.append("{\"symbol\":\"").append(symbol)
-                            .append("\",\"price\":null,\"changePercent\":null,\"offline\":true}");
-                    continue;
-                }
-
-                double price = Double.parseDouble(priceMatcher.group(1));
-                if (price <= 0 || Double.isNaN(price)) {
-                    json.append("{\"symbol\":\"").append(symbol)
-                            .append("\",\"price\":null,\"changePercent\":null,\"offline\":true}");
-                    continue;
-                }
-
-                String changePercent = "null";
-                Matcher dpMatcher = CHANGE_PERCENT_FIELD.matcher(body);
-                if (dpMatcher.find()) {
-                    changePercent = dpMatcher.group(1);
-                }
-
                 json.append("{\"symbol\":\"").append(symbol)
-                        .append("\",\"price\":").append(price)
-                        .append(",\"changePercent\":").append(changePercent)
+                        .append("\",\"price\":").append(quote.currentPrice)
+                        .append(",\"change\":").append(numberOrNull(quote.change))
+                        .append(",\"changePercent\":").append(numberOrNull(quote.changePercent))
+                        .append(",\"previousClose\":").append(numberOrNull(quote.previousClose))
+                        .append(",\"volume\":").append(numberOrNull(quote.volume))
                         .append(",\"offline\":false}");
             } catch (Exception e) {
-                json.append("{\"symbol\":\"").append(symbol)
-                        .append("\",\"price\":null,\"changePercent\":null,\"offline\":true}");
+                appendOfflineQuote(json, symbol);
             }
         }
         json.append("]");
         respondJson(exchange, 200, json.toString());
+    }
+
+    private static String fetchQuoteBody(String symbol, String apiKey) throws IOException, InterruptedException {
+        String url = "https://finnhub.io/api/v1/quote?symbol="
+                + URLEncoder.encode(symbol, StandardCharsets.UTF_8)
+                + "&token=" + URLEncoder.encode(apiKey, StandardCharsets.UTF_8);
+        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+                .timeout(Duration.ofSeconds(5))
+                .GET()
+                .build();
+        HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            throw new IOException("Quote provider returned HTTP " + response.statusCode());
+        }
+        return response.body();
+    }
+
+    private static QuoteData parseQuote(String body) {
+        QuoteData q = new QuoteData();
+        q.currentPrice = findNumber(CURRENT_PRICE_FIELD, body);
+        q.change = findNumber(CHANGE_FIELD, body);
+        q.changePercent = findNumber(CHANGE_PERCENT_FIELD, body);
+        q.previousClose = findNumber(PREVIOUS_CLOSE_FIELD, body);
+        q.volume = findNumber(VOLUME_FIELD, body);
+        return q;
+    }
+
+    private static Double findNumber(Pattern pattern, String body) {
+        Matcher matcher = pattern.matcher(body);
+        return matcher.find() ? Double.parseDouble(matcher.group(1)) : null;
+    }
+
+    private static String numberOrNull(Double value) {
+        return value == null || value.isNaN() ? "null" : value.toString();
+    }
+
+    private static void appendOfflineQuote(StringBuilder json, String symbol) {
+        json.append("{\"symbol\":\"").append(symbol)
+                .append("\",\"price\":null,\"change\":null,\"changePercent\":null,\"previousClose\":null,\"volume\":null,\"offline\":true}");
+    }
+
+    private static final class QuoteData {
+        Double currentPrice;
+        Double change;
+        Double changePercent;
+        Double previousClose;
+        Double volume;
     }
 
     private static void serveWaitlist(HttpExchange exchange) throws IOException {
