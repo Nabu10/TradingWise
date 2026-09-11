@@ -72,7 +72,7 @@
         if (!msg) return;
 
         if (result.ok) {
-          msg.textContent = "You're on the list. We'll be in touch.";
+          msg.textContent = (result.data && result.data.message) || "You're on the list. We'll be in touch.";
           msg.className = "msg success";
           form.reset();
           try {
