@@ -37,7 +37,7 @@ public class TradingWiseServer {
     private static final Pattern CHANGE_PERCENT_FIELD = Pattern.compile("\\\"dp\\\":([0-9.\\\\-]+)");
     private static final Pattern PREVIOUS_CLOSE_FIELD = Pattern.compile("\\\"pc\\\":([0-9.\\\\-]+)");
     private static final Pattern VOLUME_FIELD = Pattern.compile("\\\"v\\\":([0-9.\\\\-]+)");
-    private static final Pattern EMAIL_FIELD = Pattern.compile("\\\"email\\\"\\\\s*:\\\\s*\\\"([^\\\"]+)\\\"");
+    private static final Pattern EMAIL_FIELD = Pattern.compile("\\\"email\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"");
 
     public static void main(String[] args) throws IOException {
         int port = 8080;
@@ -293,13 +293,42 @@ public class TradingWiseServer {
         if (m.find()) {
             email = m.group(1).trim();
         }
-        if (email == null || email.isBlank() || !email.contains("@") || email.indexOf('@') < 1) {
-            respondJson(exchange, 400, "{\"error\":\"Valid email required\"}");
+        if (email == null || !isValidEmail(email)) {
+            respondJson(exchange, 400, "{\"error\":\"Please enter a valid email address.\"}");
             return;
         }
 
         System.out.println("waitlist: " + email);
         respondJson(exchange, 200, "{\"ok\":true}");
+    }
+
+    private static boolean isValidEmail(String email) {
+        if (email == null || email.length() > 254 || email.isBlank()) return false;
+        if (email.contains("..") || email.startsWith(".") || email.endsWith(".")) return false;
+
+        int at = email.lastIndexOf('@');
+        if (at < 1 || at != email.indexOf('@') || at == email.length() - 1) return false;
+
+        String local = email.substring(0, at);
+        String domain = email.substring(at + 1);
+        if (local.length() > 64 || domain.length() < 3 || !domain.contains(".")) return false;
+        if (domain.startsWith(".") || domain.endsWith(".") || domain.contains("..")) return false;
+
+        for (int i = 0; i < local.length(); i++) {
+            char c = local.charAt(i);
+            if (!(Character.isLetterOrDigit(c) || "!#$%&'*+-/=?^_`{|}~.".indexOf(c) >= 0)) return false;
+        }
+
+        for (int i = 0; i < domain.length(); i++) {
+            char c = domain.charAt(i);
+            if (!(Character.isLetterOrDigit(c) || c == '.' || c == '-')) return false;
+        }
+
+        String[] labels = domain.split("\\.");
+        for (String label : labels) {
+            if (label.isEmpty() || label.startsWith("-") || label.endsWith("-")) return false;
+        }
+        return true;
     }
 
     private static String readBody(HttpExchange exchange) throws IOException {
