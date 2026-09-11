@@ -4,23 +4,25 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pricing — TradingWise</title>
-  <meta name="description" content="Free vs Pro placeholders and Pro waitlist." />
+  <meta name="description" content="Free calculators today. Pro waitlist for saved plans and price alerts." />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="assets/css/site.css" />
-  
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
+  <div class="market-tape" data-market-tape aria-label="Market quotes" role="region">
+    <div class="market-tape-track" data-tape-track>
+      <div class="market-tape-group" data-tape-group></div>
+    </div>
+  </div>
   <header class="site-header">
     <div class="inner">
       <a class="logo" href="index.html">Trading<span>Wise</span></a>
       <nav class="nav" aria-label="Primary">
-          <a href="index.html">Home</a>
           <a href="tools/stocks.html">Stocks</a>
           <a href="tools/options.html">Options</a>
-          <a href="strategy.html">Strategy</a>
+          <a href="strategy.html">Method</a>
           <a href="pricing.html" aria-current="page">Pricing</a>
-          <a href="about.html">About</a>
       </nav>
       <div class="nav-actions">
         <button type="button" class="icon-btn mobile-nav-toggle" data-nav-toggle aria-expanded="false" aria-label="Menu">☰</button>
@@ -32,9 +34,8 @@
   <main id="main" class="wrap">
 
     <div class="page-title">
-      <p class="eyebrow">Access</p>
       <h1>Pricing</h1>
-      <p class="lede">Free tools today. Pro is a placeholder — join the waitlist. No payment processing yet.</p>
+      <p class="lede">Free calculators today. Pro is waitlist-only — saved plans and price alerts when your sell target hits. No payment processing yet.</p>
     </div>
     <div class="price-grid">
       <article class="card price-card">
@@ -53,9 +54,8 @@
         <p class="tier">Pro</p>
         <p class="amount">TBD <span>/ coming</span></p>
         <ul>
-          <li class="locked">Saved scenarios &amp; history</li>
-          <li class="locked">Multi-position workbook</li>
-          <li class="locked">Exportable reports</li>
+          <li class="locked">Saved plans — revisit cost-recovery scenarios</li>
+          <li class="locked">Price alerts when your sell target hits</li>
           <li class="locked">Priority product updates</li>
         </ul>
         <a class="btn" href="#waitlist">Join waitlist</a>
@@ -105,6 +105,6 @@
     </div>
   </footer>
   <script src="assets/js/site.js"></script>
-  
+  <script src="assets/js/market-tape.js"></script>
 </body>
 </html>

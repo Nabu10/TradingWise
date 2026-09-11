@@ -7,20 +7,22 @@
   <meta name="description" content="About TradingWise — cost-recovery planning tools." />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="assets/css/site.css" />
-  
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
+  <div class="market-tape" data-market-tape aria-label="Market quotes" role="region">
+    <div class="market-tape-track" data-tape-track>
+      <div class="market-tape-group" data-tape-group></div>
+    </div>
+  </div>
   <header class="site-header">
     <div class="inner">
       <a class="logo" href="index.html">Trading<span>Wise</span></a>
       <nav class="nav" aria-label="Primary">
-          <a href="index.html">Home</a>
           <a href="tools/stocks.html">Stocks</a>
           <a href="tools/options.html">Options</a>
-          <a href="strategy.html">Strategy</a>
+          <a href="strategy.html">Method</a>
           <a href="pricing.html">Pricing</a>
-          <a href="about.html" aria-current="page">About</a>
       </nav>
       <div class="nav-actions">
         <button type="button" class="icon-btn mobile-nav-toggle" data-nav-toggle aria-expanded="false" aria-label="Menu">☰</button>
@@ -32,7 +34,6 @@
   <main id="main" class="wrap">
 
     <div class="page-title">
-      <p class="eyebrow">Firm</p>
       <h1>About TradingWise</h1>
       <p class="lede">Editorial fintech tools for cost-recovery planning — calm, precise, and local-first.</p>
     </div>
@@ -74,6 +75,6 @@
     </div>
   </footer>
   <script src="assets/js/site.js"></script>
-  
+  <script src="assets/js/market-tape.js"></script>
 </body>
 </html>

@@ -15,6 +15,7 @@
   --danger: #a3402f;
   --max: 68rem;
   --nav-h: 4rem;
+  --tape-h: 2rem;
   --font-serif: Georgia, "Times New Roman", serif;
   --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
@@ -53,7 +54,7 @@ a:hover { color: var(--ink); }
 }
 .skip-link:focus { left: 1rem; top: 1rem; }
 .site-header {
-  position: sticky; top: 0; z-index: 50;
+  position: sticky; top: var(--tape-h); z-index: 50;
   backdrop-filter: blur(10px);
   background: color-mix(in srgb, var(--paper) 88%, transparent);
   border-bottom: 1px solid var(--border);
@@ -323,8 +324,62 @@ input[type="number"], input[type="text"], input[type="email"] {
 .mobile-nav-toggle { display: none; }
 @media (max-width: 40rem) {
   .nav { display: none; }
-  .nav.open { display: flex; position: absolute; left: 0; right: 0; top: var(--nav-h);
+  .nav.open { display: flex; position: absolute; left: 0; right: 0; top: calc(var(--tape-h) + var(--nav-h));
     flex-direction: column; background: var(--surface); border-bottom: 1px solid var(--border);
     padding: .75rem 1rem 1rem; }
   .mobile-nav-toggle { display: inline-flex; }
 }
+
+/* Market tape */
+.market-tape {
+  position: sticky; top: 0; z-index: 60;
+  height: var(--tape-h);
+  background: var(--surface-sunken);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: .68rem;
+  letter-spacing: .04em;
+  color: var(--ink-soft);
+}
+.market-tape-track {
+  display: flex; width: max-content; height: 100%;
+  align-items: center;
+}
+.market-tape-group {
+  display: flex; align-items: center; gap: 1.75rem;
+  padding: 0 1.5rem; height: 100%;
+  flex-shrink: 0;
+}
+.tape-item {
+  display: inline-flex; align-items: baseline; gap: .45rem;
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.tape-sym { color: var(--ink); font-weight: 600; letter-spacing: .08em; }
+.tape-px { color: var(--ink-soft); }
+.tape-chg { font-weight: 600; }
+.tape-item.up .tape-chg { color: var(--positive); }
+.tape-item.down .tape-chg { color: var(--danger); }
+.tape-item.flat .tape-chg, .tape-item.offline .tape-px { color: var(--ink-faint); }
+.tape-note .tape-sym { color: var(--ink-faint); font-weight: 500; letter-spacing: .06em; text-transform: uppercase; }
+@media (prefers-reduced-motion: no-preference) {
+  .market-tape-track { animation: tw-tape-scroll 40s linear infinite; }
+  .market-tape:hover .market-tape-track { animation-play-state: paused; }
+}
+@keyframes tw-tape-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .market-tape-track { animation: none; width: 100%; overflow-x: auto; }
+  .market-tape-group[aria-hidden="true"] { display: none; }
+}
+
+/* Trust strip */
+.trust-strip {
+  font-family: var(--font-mono); font-size: .7rem; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-faint); margin: 0 0 1.75rem;
+  padding: .65rem 0; border-bottom: 1px solid var(--border);
+}
+.hero + .trust-strip { margin-top: -2rem; }

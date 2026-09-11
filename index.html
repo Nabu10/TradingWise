@@ -4,23 +4,25 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Home — TradingWise</title>
-  <meta name="description" content="Cost-recovery planning for equities and options." />
+  <meta name="description" content="Know exactly how many shares or contracts to sell to get your capital back." />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="assets/css/site.css" />
-  
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
+  <div class="market-tape" data-market-tape aria-label="Market quotes" role="region">
+    <div class="market-tape-track" data-tape-track>
+      <div class="market-tape-group" data-tape-group></div>
+    </div>
+  </div>
   <header class="site-header">
     <div class="inner">
       <a class="logo" href="index.html">Trading<span>Wise</span></a>
       <nav class="nav" aria-label="Primary">
-          <a href="index.html" aria-current="page">Home</a>
           <a href="tools/stocks.html">Stocks</a>
           <a href="tools/options.html">Options</a>
-          <a href="strategy.html">Strategy</a>
+          <a href="strategy.html">Method</a>
           <a href="pricing.html">Pricing</a>
-          <a href="about.html">About</a>
       </nav>
       <div class="nav-actions">
         <button type="button" class="icon-btn mobile-nav-toggle" data-nav-toggle aria-expanded="false" aria-label="Menu">☰</button>
@@ -32,33 +34,34 @@
   <main id="main" class="wrap">
 
     <section class="hero">
-      <p class="eyebrow">Institutional clarity · Retail tools</p>
-      <h1>Recover cost. Hold the rest at zero.</h1>
-      <p class="lede">TradingWise turns a target gain into a concrete sell plan — how many shares or contracts to close so your capital is back, and how many stay as free positions.</p>
+      <h1>Know exactly how many shares to sell to get your capital back.</h1>
+      <p class="lede">Enter cost and a target gain. TradingWise tells you the sell price, how many shares or contracts to close so proceeds cover your cost, and how many stay as free positions — in about five seconds.</p>
       <div class="hero-cta">
         <a class="btn btn-primary" href="tools/stocks.html">Stocks calculator</a>
         <a class="btn" href="tools/options.html">Options calculator</a>
-        <a class="btn btn-ghost" href="strategy.html">Read the method</a>
+        <a class="btn btn-ghost" href="pricing.html">Pricing</a>
       </div>
     </section>
+
+    <p class="trust-strip">Not a broker · Not advice · Math runs on your server</p>
 
     <section class="section">
       <div class="section-head"><h2>How it works</h2></div>
       <div class="grid-3">
         <article class="card card-pad">
-          <div class="step-num">01 · Position</div>
-          <h3>Enter your cost</h3>
-          <p>Buy price and share count — or premium and contracts. Optional live quote for equities.</p>
+          <div class="step-num">01 · Cost</div>
+          <h3>Enter the position</h3>
+          <p>Buy price and share count — or premium and contracts. Optional live equity quote fills the price.</p>
         </article>
         <article class="card card-pad">
           <div class="step-num">02 · Target</div>
-          <h3>Set the gain</h3>
-          <p>Choose the percentage move at which you want capital recovered. The engine does the math in Java.</p>
+          <h3>Pick the gain</h3>
+          <p>Set the percentage move where you want capital recovered. The Java engine computes the rest.</p>
         </article>
         <article class="card card-pad">
-          <div class="step-num">03 · Plan</div>
-          <h3>Sell a slice</h3>
-          <p>See exact sell price, units to close, free remainder, proceeds, and surplus — with a clear visual split.</p>
+          <div class="step-num">03 · Sell plan</div>
+          <h3>Exact units to close</h3>
+          <p>See sell price, shares or contracts to sell, free remainder, proceeds, and surplus — with a clear visual split.</p>
         </article>
       </div>
     </section>
@@ -66,34 +69,15 @@
     <section class="section">
       <div class="banner">
         <div>
-          <h2>Try the free tools</h2>
-          <p class="lede" style="margin:0">Stocks and options calculators, no account required. Pro features are on the waitlist.</p>
+          <h2>Free calculators. Pro on the waitlist.</h2>
+          <p class="lede" style="margin:0">Stocks and options tools need no account. Pro will add saved plans and price alerts when your sell target hits — join the waitlist when you are ready.</p>
         </div>
         <div class="hero-cta" style="margin:0">
-          <a class="btn btn-primary" href="tools/stocks.html">Open stocks</a>
+          <a class="btn btn-primary" href="tools/stocks.html">Open tools</a>
           <a class="btn" href="pricing.html">See pricing</a>
         </div>
       </div>
     </section>
-
-    <section class="section">
-      <div class="section-head"><h2>Monetization</h2></div>
-      <div class="grid-2">
-        <article class="card card-pad">
-          <h3>Free</h3>
-          <p>Core cost-recovery calculators for stocks and options. Educational use. Always available locally.</p>
-        </article>
-        <article class="card card-pad">
-          <h3>Pro — waitlist</h3>
-          <p>Saved scenarios, multi-leg views, and richer reporting — placeholders for now. No Stripe yet. Join the waitlist on Pricing.</p>
-        </article>
-      </div>
-    </section>
-
-    <p class="fine" style="font-family:var(--font-sans);font-size:.8rem;color:var(--ink-faint);margin-top:2rem">
-      TradingWise is educational software, not a broker and not investment advice.
-      See the <a href="disclaimer.html">disclaimer</a>.
-    </p>
 
   </main>
   <footer class="site-footer">
@@ -126,6 +110,6 @@
     </div>
   </footer>
   <script src="assets/js/site.js"></script>
-  
+  <script src="assets/js/market-tape.js"></script>
 </body>
 </html>

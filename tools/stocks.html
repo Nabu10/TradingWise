@@ -7,20 +7,22 @@
   <meta name="description" content="Cost-recovery calculator for stock positions." />
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="../assets/css/site.css" />
-  
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
+  <div class="market-tape" data-market-tape aria-label="Market quotes" role="region">
+    <div class="market-tape-track" data-tape-track>
+      <div class="market-tape-group" data-tape-group></div>
+    </div>
+  </div>
   <header class="site-header">
     <div class="inner">
       <a class="logo" href="../index.html">Trading<span>Wise</span></a>
       <nav class="nav" aria-label="Primary">
-          <a href="../index.html">Home</a>
           <a href="../tools/stocks.html" aria-current="page">Stocks</a>
           <a href="../tools/options.html">Options</a>
-          <a href="../strategy.html">Strategy</a>
+          <a href="../strategy.html">Method</a>
           <a href="../pricing.html">Pricing</a>
-          <a href="../about.html">About</a>
       </nav>
       <div class="nav-actions">
         <button type="button" class="icon-btn mobile-nav-toggle" data-nav-toggle aria-expanded="false" aria-label="Menu">☰</button>
@@ -32,10 +34,10 @@
   <main id="main" class="wrap">
 
     <div class="page-title">
-      <p class="eyebrow">Tools · Equities</p>
       <h1>Stocks calculator</h1>
       <p class="lede">Plan how many shares to sell at your target gain so cost is recovered and the rest rides free.</p>
     </div>
+    <p class="trust-strip">Not a broker · Not advice · Math runs on your server</p>
     <div class="tabs">
       <a href="stocks.html" aria-current="page">Stocks</a>
       <a href="options.html">Options</a>
@@ -122,6 +124,7 @@
     </div>
   </footer>
   <script src="../assets/js/site.js"></script>
+  <script src="../assets/js/market-tape.js"></script>
   <script src="../assets/js/calc-stocks.js"></script>
 </body>
 </html>
