@@ -4,6 +4,7 @@
   var gainEl = document.getElementById("gainPercent");
   var warnEl = document.getElementById("warn");
   var resultsEl = document.getElementById("results");
+  var scalingBodyEl = document.getElementById("scaling-body");
 
   var out = {
     sellPrice: document.getElementById("out-sellPrice"),
@@ -25,10 +26,15 @@
     return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
+  function shares(n) {
+    return n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  }
+
   function warn(msg) {
     warnEl.textContent = msg;
     warnEl.classList.add("show");
     resultsEl.classList.add("hidden");
+    if (scalingBodyEl) scalingBodyEl.innerHTML = "";
   }
 
   function clearWarn() {
@@ -68,30 +74,30 @@
           return;
         }
         clearWarn();
-        render(result.data, quantity);
+        render(result.data, quantity, parseFloat(buyPriceRaw));
       })
       .catch(function () {
-        warn("Could not reach the TradingWise server. Make sure TradingWiseServer is running, then reload from http://localhost:8080/.");
+        warn("Could not reach the TradingWise server. Make sure TradingWiseServer is running, then reload.");
       });
   }
 
-  function render(r, quantity) {
+  function render(r, quantity, buyPrice) {
     var sellPrice = Number(r.sellPrice);
     var sharesRounded = Number(r.sharesToSellRounded);
     var freeShares = Number(r.freeSharesRemaining);
     var totalCost = Number(r.totalCost);
 
     out.sellPrice.textContent = money(sellPrice);
-    out.sharesRounded.textContent = sharesRounded.toLocaleString("en-US");
-    out.freeShares.textContent = freeShares.toLocaleString("en-US");
+    out.sharesRounded.textContent = shares(sharesRounded);
+    out.freeShares.textContent = shares(freeShares);
     out.totalCost.textContent = money(totalCost);
     out.sharesExact.textContent = Number(r.sharesToSellExact).toFixed(4);
     out.proceeds.textContent = money(Number(r.actualProceeds));
     out.surplus.textContent = money(Number(r.surplus));
 
-    var soldPct = (sharesRounded / quantity) * 100;
-    var freePct = 100 - soldPct;
-    barSold.style.width = soldPct + "%";
+    var soldPct = quantity > 0 ? (sharesRounded / quantity) * 100 : 0;
+    var freePct = Math.max(0, 100 - soldPct);
+    barSold.style.width = Math.min(100, soldPct) + "%";
     barFree.style.width = freePct + "%";
     labSoldPct.textContent = soldPct.toFixed(1) + "%";
     labFreePct.textContent = freePct.toFixed(1) + "%";
@@ -101,8 +107,31 @@
     if (freeShares === 0) {
       barCaption.textContent = "At this gain, every share is needed to recover cost — none are left over.";
     } else {
-      barCaption.textContent = "Sell " + sharesRounded + " of " + quantity + " shares at " + money(sellPrice) + " to recover your " + money(totalCost) + " cost. The remaining " + freeShares + " shares are held at zero net cost.";
+      barCaption.textContent = "Sell " + sharesRounded + " of " + shares(quantity) + " shares at " + money(sellPrice) + " to recover your " + money(totalCost) + " cost. The remaining " + shares(freeShares) + " shares are held at zero net cost.";
     }
+
+    renderScalingPlan(buyPrice, quantity, totalCost);
+  }
+
+  function renderScalingPlan(buyPrice, quantity, totalCost) {
+    if (!scalingBodyEl || buyPrice <= 0 || quantity <= 0) return;
+
+    var targets = [10, 20, 30, 50, 75, 100];
+    scalingBodyEl.innerHTML = targets.map(function (gain) {
+      var price = buyPrice * (1 + gain / 100);
+      var sellExact = totalCost / price;
+      var sellRounded = Math.min(quantity, Math.ceil(sellExact));
+      var keep = Math.max(0, quantity - sellRounded);
+      var keepValue = keep * price;
+
+      return "<tr>"
+        + "<td>+" + gain + "%</td>"
+        + "<td>" + money(price) + "</td>"
+        + "<td>" + shares(sellRounded) + "</td>"
+        + "<td class=\"keep-value\">" + shares(keep) + "</td>"
+        + "<td>" + money(keepValue) + "</td>"
+        + "</tr>";
+    }).join("");
   }
 
   [buyEl, qtyEl, gainEl].forEach(function (el) {
