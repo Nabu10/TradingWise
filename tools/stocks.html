@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Stocks calculator — TradingWise</title>
-  <meta name="description" content="Cost-recovery calculator for stock positions." />
+  <meta name="description" content="Learn to scale stock positions with a cost-recovery and scaling plan." />
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="../assets/css/site.css" />
 </head>
@@ -35,7 +35,7 @@
 
     <div class="page-title">
       <h1>Stocks calculator</h1>
-      <p class="lede">Plan how many shares to sell at your target gain so cost is recovered and the rest rides free.</p>
+      <p class="lede">Learn to scale a position. Plan how many shares to sell at your target gain, recover your starting capital, and see what you can keep riding.</p>
     </div>
     <p class="trust-strip">Not a broker · Not advice · Math runs on your server</p>
     <div class="tabs">
@@ -65,7 +65,7 @@
           <div class="field">
             <label for="gainPercent">Target gain</label>
             <div class="input-row"><input id="gainPercent" type="number" step="any" min="0" value="11" /><span class="suffix">%</span></div>
-            <span class="hint">Classic example: $100 · 100 shares · 11%</span>
+            <span class="hint">Your scale-out target. Higher targets require fewer shares to recover cost.</span>
           </div>
         </form>
         <div id="warn" class="warn" role="status"></div>
@@ -92,6 +92,32 @@
         </div>
       </div>
     </div>
+
+    <section class="section scaling-section" id="scaling-plan">
+      <div class="section-head">
+        <div>
+          <h2>Scale the position</h2>
+          <p class="section-note">See how the number of shares needed to recover your original capital changes as the price rises.</p>
+        </div>
+      </div>
+      <div class="card scaling-card">
+        <div class="scaling-table-wrap">
+          <table class="scaling-table">
+            <thead>
+              <tr>
+                <th>Target</th>
+                <th>Price</th>
+                <th>Sell</th>
+                <th>Keep</th>
+                <th>Keep value</th>
+              </tr>
+            </thead>
+            <tbody id="scaling-body"></tbody>
+          </table>
+        </div>
+        <p class="scaling-note">Illustration only. This model assumes the sale proceeds are used to recover the original cost and does not include taxes, commissions, or slippage.</p>
+      </div>
+    </section>
 
   </main>
   <footer class="site-footer">
