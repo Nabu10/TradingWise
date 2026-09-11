@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
  * TradingWise web server and APIs.
  * Finnhub and Resend API keys are server-side environment variables only.
  * Waitlist confirmation is in-memory for the current testing phase.
+ * While using Resend's test sender, emails are delivered to RESEND_TEST_RECIPIENT.
  */
 public class TradingWiseServer {
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
@@ -163,7 +164,7 @@ public class TradingWiseServer {
         String url = "https://finnhub.io/api/v1/quote?symbol=" + URLEncoder.encode(symbol, StandardCharsets.UTF_8)
                 + "&token=" + URLEncoder.encode(apiKey, StandardCharsets.UTF_8);
         HttpRequest request = HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofSeconds(5)).GET().build();
-        HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = HTTP_CLIENT.send(request, HttpRequest.BodyHandlers.ofString());
         if (response.statusCode() != 200) throw new IOException("Quote provider returned HTTP " + response.statusCode());
         return response.body();
     }
@@ -189,16 +190,20 @@ public class TradingWiseServer {
         if (VERIFIED_EMAILS.contains(email)) { respondJson(exchange, 200, "{\"ok\":true,\"verified\":true,\"message\":\"This email is already on the waitlist.\"}"); return; }
 
         String resendKey = System.getenv("RESEND_API_KEY");
-        if (resendKey == null || resendKey.isBlank()) {
+        String testRecipient = System.getenv("RESEND_TEST_RECIPIENT");
+        if (resendKey == null || resendKey.isBlank() || testRecipient == null || testRecipient.isBlank()) {
             respondJson(exchange, 500, "{\"error\":\"Waitlist email service is not configured yet.\"}"); return;
+        }
+        if (!isValidEmail(testRecipient)) {
+            respondJson(exchange, 500, "{\"error\":\"RESEND_TEST_RECIPIENT is not a valid email address.\"}"); return;
         }
         String token = UUID.randomUUID().toString();
         PENDING_CONFIRMATIONS.put(token, email);
         String confirmUrl = baseUrl(exchange) + "/api/waitlist/confirm?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
         try {
-            sendResendEmail(resendKey, email, "Confirm your TradingWise Pro waitlist", confirmationHtml(email, confirmUrl));
-            System.out.println("waitlist confirmation sent: " + email);
-            respondJson(exchange, 200, "{\"ok\":true,\"pending\":true,\"message\":\"Check your email to confirm your waitlist signup.\"}");
+            sendResendEmail(resendKey, testRecipient, "Confirm your TradingWise Pro waitlist", confirmationHtml(email, confirmUrl));
+            System.out.println("waitlist confirmation sent to test recipient for: " + email);
+            respondJson(exchange, 200, "{\"ok\":true,\"pending\":true,\"testing\":true,\"message\":\"Confirmation email sent to the TradingWise test inbox.\"}");
         } catch (Exception e) {
             PENDING_CONFIRMATIONS.remove(token);
             System.err.println("waitlist email failed: " + e.getMessage());
@@ -213,8 +218,9 @@ public class TradingWiseServer {
         if (email == null) { respondHtml(exchange, 400, confirmationPage("Link expired", "This confirmation link is invalid or has already been used.")); return; }
         VERIFIED_EMAILS.add(email);
         String resendKey = System.getenv("RESEND_API_KEY");
-        if (resendKey != null && !resendKey.isBlank()) {
-            try { sendResendEmail(resendKey, email, "You're on the TradingWise Pro waitlist", welcomeHtml(email)); }
+        String testRecipient = System.getenv("RESEND_TEST_RECIPIENT");
+        if (resendKey != null && !resendKey.isBlank() && testRecipient != null && isValidEmail(testRecipient)) {
+            try { sendResendEmail(resendKey, testRecipient, "You're on the TradingWise Pro waitlist", welcomeHtml(email)); }
             catch (Exception e) { System.err.println("waitlist welcome email failed: " + e.getMessage()); }
         }
         System.out.println("waitlist verified: " + email);
@@ -227,7 +233,7 @@ public class TradingWiseServer {
                 .timeout(Duration.ofSeconds(10)).header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(json)).build();
         HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() < 200 || response.statusCode() >= 300) throw new IOException("Resend HTTP " + response.statusCode());
+        if (response.statusCode() < 200 || response.statusCode() >= 300) throw new IOException("Resend HTTP " + response.statusCode() + ": " + response.body());
     }
 
     private static String confirmationHtml(String email, String url) {
