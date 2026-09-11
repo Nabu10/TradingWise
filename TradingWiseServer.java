@@ -33,6 +33,7 @@ public class TradingWiseServer {
             .build();
 
     private static final Pattern CURRENT_PRICE_FIELD = Pattern.compile("\"c\":([0-9.\\-]+)");
+    private static final Pattern CHANGE_PERCENT_FIELD = Pattern.compile("\"dp\":([0-9.\\-]+)");
     private static final Pattern EMAIL_FIELD = Pattern.compile("\"email\"\\s*:\\s*\"([^\"]+)\"");
 
     public static void main(String[] args) throws IOException {
@@ -192,6 +193,87 @@ public class TradingWiseServer {
         } catch (Exception e) {
             respondJson(exchange, 502, "{\"error\":\"Could not reach the quote provider. Try again in a moment.\"}");
         }
+    }
+
+
+    private static void serveQuotes(HttpExchange exchange) throws IOException {
+        if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())
+                && !"HEAD".equalsIgnoreCase(exchange.getRequestMethod())) {
+            respondJson(exchange, 405, "{\"error\":\"GET required\"}");
+            return;
+        }
+
+        Map<String, String> params = parseQuery(exchange.getRequestURI().getQuery());
+        String symbolsParam = params.get("symbols");
+        if (symbolsParam == null || symbolsParam.isBlank()) {
+            symbolsParam = "SPY,QQQ,DIA,IWM,TLT,GLD";
+        }
+
+        String[] symbols = symbolsParam.split(",");
+        String apiKey = System.getenv("FINNHUB_API_KEY");
+        boolean missingKey = apiKey == null || apiKey.isBlank();
+
+        StringBuilder json = new StringBuilder("[");
+        boolean any = false;
+        for (String raw : symbols) {
+            String symbol = raw.trim().toUpperCase();
+            if (symbol.isEmpty()) continue;
+            if (any) json.append(",");
+            any = true;
+
+            if (missingKey) {
+                json.append("{\"symbol\":\"").append(symbol)
+                        .append("\",\"price\":null,\"changePercent\":null,\"offline\":true}");
+                continue;
+            }
+
+            try {
+                String url = "https://finnhub.io/api/v1/quote?symbol="
+                        + URLEncoder.encode(symbol, StandardCharsets.UTF_8)
+                        + "&token=" + URLEncoder.encode(apiKey, StandardCharsets.UTF_8);
+                HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+                        .timeout(Duration.ofSeconds(5))
+                        .GET()
+                        .build();
+                HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() != 200) {
+                    json.append("{\"symbol\":\"").append(symbol)
+                            .append("\",\"price\":null,\"changePercent\":null,\"offline\":true}");
+                    continue;
+                }
+
+                String body = response.body();
+                Matcher priceMatcher = CURRENT_PRICE_FIELD.matcher(body);
+                if (!priceMatcher.find()) {
+                    json.append("{\"symbol\":\"").append(symbol)
+                            .append("\",\"price\":null,\"changePercent\":null,\"offline\":true}");
+                    continue;
+                }
+
+                double price = Double.parseDouble(priceMatcher.group(1));
+                if (price <= 0 || Double.isNaN(price)) {
+                    json.append("{\"symbol\":\"").append(symbol)
+                            .append("\",\"price\":null,\"changePercent\":null,\"offline\":true}");
+                    continue;
+                }
+
+                String changePercent = "null";
+                Matcher dpMatcher = CHANGE_PERCENT_FIELD.matcher(body);
+                if (dpMatcher.find()) {
+                    changePercent = dpMatcher.group(1);
+                }
+
+                json.append("{\"symbol\":\"").append(symbol)
+                        .append("\",\"price\":").append(price)
+                        .append(",\"changePercent\":").append(changePercent)
+                        .append(",\"offline\":false}");
+            } catch (Exception e) {
+                json.append("{\"symbol\":\"").append(symbol)
+                        .append("\",\"price\":null,\"changePercent\":null,\"offline\":true}");
+            }
+        }
+        json.append("]");
+        respondJson(exchange, 200, json.toString());
     }
 
     private static void serveWaitlist(HttpExchange exchange) throws IOException {
