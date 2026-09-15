@@ -82,10 +82,10 @@ class TradingCostPriceCalculatorTest {
 
         assertDecimalEquals("12345000.00", result.totalCost);
         assertDecimalEquals("141.9675", result.sellPrice);
-        assertDecimalEquals("86920.0", result.sharesToSellExact);
-        assertDecimalEquals("86920", result.sharesToSellRounded);
-        assertDecimalEquals("13080", result.freeSharesRemaining);
-        assertDecimalEquals("12345000.00", result.actualProceeds);
+        assertDecimalEquals("86956.5217", result.sharesToSellExact);
+        assertDecimalEquals("86957", result.sharesToSellRounded);
+        assertDecimalEquals("13043", result.freeSharesRemaining);
+        assertDecimalEquals("12345067.90", result.actualProceeds);
     }
 
     private static TradingCostPriceCalculator.Result calculate(String buyPrice, String quantity, String gainPercent) {
